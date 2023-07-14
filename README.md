@@ -90,11 +90,19 @@ C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\Common7\Package
 ```
 
 ## Future
+- [x] estr nativs support
+- [x] estr reserve data manual
 - [x] estr support plus const char*
-
-- [x] Json basic parser
-- [x] Json support Obj array
-- [x] Json support Number array
-- [x] Json support String array
-- [] Json support bool array
-- [] Json support parse float array
+- [x] estr support `if` valid check
+- 
+- [x] estrs nativs support
+- 
+- [x] ejson nativs support
+- [x] ejson for any type
+- [x] ejson `if` valid check
+- [x] ejson basic str parser
+- [x] ejson support Obj array
+- [x] ejson support Number array
+- [x] ejson support String array
+- [ ] ejson support bool array
+- [ ] ejson support parse float array
