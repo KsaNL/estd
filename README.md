@@ -59,7 +59,7 @@ printf("_i %d", _i);
 
 ## Debug
 
-> You can debugger with Visual Vtudio by *.nativs, copy to
+> You can use  Visual Vtudio debugger by copy *.nativs to, 
 ```
 > VS2019
 C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\Common7\Packages\Debugger\Visualizers
