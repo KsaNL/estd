@@ -2,8 +2,11 @@
 Esay standard extension for basic types
 
 ## Using 
-> The Json parse speed as fast as strlen, enjoy.
-
+> The Json parser speed as faster as `strlen`, enjoy!
+> You can debugger with Visual Vtudio by nativs, copy to
+> 
+> C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\Common7\Packages\Debugger\Visualizers
+> OR VS2022 "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\Packages\Debugger\Visualizers"
 ```cpp
 // estr 
 estr tmp("%d%S", 123, L"456");
