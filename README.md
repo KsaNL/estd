@@ -35,7 +35,7 @@ also `exxsprintf` let sprintf more flexible
 > 
 > dbk("Done!");
 > ```
-> ![image](https://github.com/KsaNL/estd/assets/73447685/> 9cc6710e-f3eb-40e7-b6f7-ebf65dfacd1a)
+> ![image](https://github.com/KsaNL/estd/assets/73447685/9cc6710e-f3eb-40e7-b6f7-ebf65dfacd1a)
 
 > `ejson`
 > ```cpp
@@ -71,7 +71,7 @@ also `exxsprintf` let sprintf more flexible
 > int _i = ej["data"]["stat"]["message_sent"];
 > printf("_i %d", _i);
 > ```
-> ![image](https://github.com/KsaNL/estd/assets/73447685/> 70ff2fc9-1c79-4c74-b266-599ac0bf1e1f)
+> ![image](https://github.com/KsaNL/estd/assets/73447685/70ff2fc9-1c79-4c74-b266-599ac0bf1e1f)
 
 
 ## Debug
