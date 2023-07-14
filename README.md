@@ -16,6 +16,7 @@ also `exxsprintf` let sprintf more flexible
 >
 > all class comply with **RAII**
 > 
+> header line: **1000**
 
 > `estr (deep copy ONLY)`
 > ```cpp
