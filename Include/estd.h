@@ -3,7 +3,7 @@
  * >
  * > Project: EasyStandard
  * > Copyright: KsaNL(Personal)
- * > Author	: KsaNL(gaishibz@gmail.com) 
+ * > Author	: KsaNL(gaishibz@gmail.com)[1mon 3day to 20]
  * > Detail : Build in China, begin this at 07/12, 3 days done.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -503,7 +503,7 @@ public:
 	}
 	size_t sizes() { return this->asargc; }
 
-	// *********** ±ê×¼µü´ú ************ //
+	// *********** Â±ÃªÃ—Â¼ÂµÃ¼Â´Ãº ************ //
 	class iterator {
 	public:
 		iterator(estr* t, size_t sz) : itptr(t), itpos(sz) {}
