@@ -3,10 +3,7 @@ Esay standard extension for basic types
 
 ## Using 
 > The Json parser speed as faster as `strlen`, enjoy!
-> You can debugger with Visual Vtudio by nativs, copy to
-> 
-> C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\Common7\Packages\Debugger\Visualizers
-> OR VS2022 "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\Packages\Debugger\Visualizers"
+
 ```cpp
 // estr 
 estr tmp("%d%S", 123, L"456");
@@ -58,3 +55,18 @@ int _i = ej["data"]["stat"]["message_sent"];
 printf("_i %d", _i);
 ```
 ![image](https://github.com/KsaNL/estd/assets/73447685/70ff2fc9-1c79-4c74-b266-599ac0bf1e1f)
+
+
+## Debug
+
+> You can debugger with Visual Vtudio by *.nativs, copy to
+```
+> VS2019
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\Common7\Packages\Debugger\Visualizers
+```
+
+> OR 
+```
+> VS2022
+"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\Packages\Debugger\Visualizers"
+```
