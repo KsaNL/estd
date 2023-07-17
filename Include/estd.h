@@ -380,7 +380,7 @@ public:
 		if (char* p = strstr(this->asdata, sleft)) {
 			if (!bContain) p += (_M - 1);
 			ucode = unsigned((p - this->asdata)) << 16;
-			if (p = strstr(this->asdata, sright)) {
+			if (p = strstr(p, sright)) {
 				if (bContain) p += (_N - 1);
 				ucode |= ((p - this->asdata) & 0xFFFF);
 			}
