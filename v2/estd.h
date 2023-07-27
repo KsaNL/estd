@@ -1076,7 +1076,7 @@ private:
 					js.asttr = ej_json | (uh & ej_size);
 
 					while (*v++ == '"') {
-						s = strchr(v, '":'); dbi(!s, s, p); if (s)*(s++ - 1) = '\0';
+						s = strchr(v, '":'); dbi(!s, s, v); if (s)*(s++ - 1) = '\0';
 						v = parse_json(son++, s, v); if(*(v+1)=='"')v++;
 						if ( *v == ',') v++;
 					}
