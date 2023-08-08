@@ -1,5 +1,5 @@
 # estd
-Exquisite and easy standard extension for basic types
+Exquisite standard extension for basic types and make c++ as easy as possible.
 
 ## Manual
 Add `vscprintf` to fix `_vscprintf` "%S" return -1,
@@ -16,8 +16,8 @@ also `exxsprintf` let sprintf more flexible
 >
 > all class comply with **RAII**
 > 
-> header line: **1000**
-
+> header line v1/v2/v3: ONLY **1000 1200 1200**
+> 
 > `estr (deep copy ONLY)`
 > ```cpp
 > // estr
@@ -96,6 +96,8 @@ C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\Common7\Package
 - [x] estr support `if` valid check
 - 
 - [x] estrs nativs support
+- 
+- [x] ecstr make c++17 encrypt string by stack(v3 made this 12 day to 20.Y.O)
 - 
 - [x] ejson nativs support
 - [x] ejson for any type
