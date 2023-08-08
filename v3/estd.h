@@ -1,9 +1,9 @@
 /*
  * > [2023/07/15 OpenSource]
  * >
- * > Project: EasyStandard
- * > Copyright: KsaNL(Personal)
- * > Author	: KsaNL(gaishibz@gmail.com) 
+ * > Project: Estd Header
+ * > Copyright: Lioncky(Personal)
+ * > Project	: https://github.com/Lioncky/estd
  * > Detail : Build in China, begin this at 07/12, 3 days done.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,9 +32,9 @@
 #	include <limits.h>// int_max
 #	include <stdio.h>// vsprintf
 
-#ifndef edef
-#	define edef	0
-#	define esame	edef
+#ifndef esdef
+#	define esame 0
+#	define esdef  size_t(0)
 #	define enulls ((char*)"")
 #	define esdo(x) extern void x(); x();
 #	define esames(x,y) (strcmp(x,y)==0)
@@ -395,10 +395,10 @@ public:
 		return this->asdata ? !!strchr(this->asdata, _c) : false;
 	}
 	char* rfind(const char* sfind) {
-		char* endstr = this->asdata+this->asize;
-		size_t ufind=strlen(sfind);
-
-		if (ufind && this->asize) {
+		size_t ufind; char* endstr;
+		if (this->asdata) {
+			ufind = strlen(sfind);
+			endstr = this->asdata + this->asize;
 			do {
 				if (0==memcmp(--endstr, sfind, ufind))
 					return endstr;
@@ -408,7 +408,7 @@ public:
 	}
 	size_t occurs(const char* _c, size_t _cz = ~0) {
 		size_t uz = 0; char* _s;
-		if (this->asize) {
+		if (this->asdata) {
 			if (_s = strstr(this->asdata, _c)) {
 				if (_cz == ~0) _cz = strlen(_c);  
 				do { uz++; _s += _cz; }
@@ -487,7 +487,7 @@ public:
 	//
 	template <size_t _N,size_t N=_N-1>
 	bool cmprm(const char(&sleft)[_N]) {
-		if (esame == memcmp(sleft, this->asdata, N)) {
+		if (this->asdata && esame == memcmp(sleft, this->asdata, N)) {
 			this->asize -= N;
 			memcpy(this->asdata, this->asdata + N, this->asize + 1);
 			return true;
@@ -505,7 +505,7 @@ public:
 		constexpr size_t N = _N - 1;
 		constexpr size_t M = _M - 1;
 		unsigned ucode = 0;
-		if (char* p = strstr(this->asdata, sleft)) {
+		if (this->asdata && char* p = strstr(this->asdata, sleft)) {
 			if (!bContain) p += (_M - 1);
 			ucode = unsigned((p - this->asdata)) << 16;
 			if (p = strstr(p, sright)) {
@@ -517,7 +517,7 @@ public:
 	}
 	estr getmid(unsigned ur) {
 		unsigned ul = ur >> 16; ur &= 0xFFFF;
-		return estr(ur ? (ur - ul) : 0, this->data() + ul);
+		return ur ? estr(esdef) : estr(ur - ul, this->data() + ul);
 	}
 
 	//
@@ -612,7 +612,7 @@ private:
 		return 0;
 	};
 	void _rep(const char* _, size_t _u,const char* _to, size_t _uto) {
-		if(!this->asize) return;
+		if(!this->asdata) return;
 
 		char* p, * bak, * n, * n_; size_t _uc;
 		p = bak = this->asdata;
