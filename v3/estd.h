@@ -504,8 +504,8 @@ public:
 	unsigned cmpmid(const char(&sleft)[_M], const char(&sright)[_N], bool bContain = false) {
 		constexpr size_t N = _N - 1;
 		constexpr size_t M = _M - 1;
-		unsigned ucode = 0;
-		if (this->asdata && char* p = strstr(this->asdata, sleft)) {
+		unsigned ucode = 0; char* p;
+		if (this->asdata && (p = strstr(this->asdata, sleft)) ) {
 			if (!bContain) p += (_M - 1);
 			ucode = unsigned((p - this->asdata)) << 16;
 			if (p = strstr(p, sright)) {
@@ -517,7 +517,7 @@ public:
 	}
 	estr getmid(unsigned ur) {
 		unsigned ul = ur >> 16; ur &= 0xFFFF;
-		return ur ? estr(esdef) : estr(ur - ul, this->data() + ul);
+		return ur ? estr(ur - ul, this->data() + ul) : estr(esdef);
 	}
 
 	//
