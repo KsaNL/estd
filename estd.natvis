@@ -33,9 +33,9 @@ To enable:
 -->
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 	<Type Name="estr">
-		<Intrinsic Name="data" Expression="asdata"/>
-		<Intrinsic Name="size" Expression="asize"/>
-		<Intrinsic Name="capacity" Expression="asize+4"/>
+		<Intrinsic Name="data" Expression="esdata"/>
+		<Intrinsic Name="size" Expression="esize"/>
+		<Intrinsic Name="capacity" Expression="esize+2"/>
 			<DisplayString Condition="(unsigned)size()==0xCCCCCCCC">!! [invalid]</DisplayString>
 			<DisplayString Condition="size()==~0">[{data(),su}]</DisplayString>
 			<DisplayString >{size(),u} : [{data(),s8}]</DisplayString>
@@ -51,8 +51,8 @@ To enable:
 	</Type>
 	
 	<Type Name="estrs">
-		<Intrinsic Name="data" Expression="asarg"/>
-		<Intrinsic Name="size" Expression="asargc"/>
+		<Intrinsic Name="data" Expression="esarg"/>
+		<Intrinsic Name="size" Expression="esargc"/>
 			<DisplayString Condition="(unsigned)size()==0xCCCCCCCC">!! [invalid]</DisplayString>
 			<DisplayString >[{size(),u}]</DisplayString>
 			<Expand>
@@ -65,21 +65,21 @@ To enable:
 	</Type>
 	
 	<Type Name="ejson">
-		<Intrinsic Name="name" Expression="aname"/>
-		<Intrinsic Name="data" Expression="(char*)amap"/>
-		<Intrinsic Name="origin" Expression="(char*)asori"/>
-		<Intrinsic Name="orilen" Expression="strlen(asori)"/>
-		<Intrinsic Name="value" Expression="(long long)amap"/>
-		<Intrinsic Name="size" Expression="asttr&amp;0x00FFFFFF"/>
-		<Intrinsic Name="attr" Expression="asttr&amp;0xFF000000"/>
-		<Intrinsic Name="isv" Expression="(asttr&amp;0x0F000000)==0"/>
-		<Intrinsic Name="isf" Expression="(asttr&amp;0x01000000)!=0"/>
-		<Intrinsic Name="isbr" Expression="(asttr&amp;0x02000000)!=0"/>
-		<Intrinsic Name="istr" Expression="(asttr&amp;0x04000000)!=0"/>
-		<Intrinsic Name="isjs" Expression="(asttr&amp;0x08000000)!=0"/>
-		<Intrinsic Name="isnew" Expression="(asttr&amp;0x10000000)!=0"/>
-		<Intrinsic Name="isary" Expression="(asttr&amp;0x20000000)!=0"/>
-		<Intrinsic Name="isnull" Expression="(asttr&amp;0x80000000)!=0"/>
+		<Intrinsic Name="name" Expression="ename"/>
+		<Intrinsic Name="data" Expression="(char*)emap"/>
+		<Intrinsic Name="origin" Expression="(char*)esori"/>
+		<Intrinsic Name="orilen" Expression="strlen(esori)"/>
+		<Intrinsic Name="value" Expression="(long long)emap"/>
+		<Intrinsic Name="size" Expression="esttr&amp;0x00FFFFFF"/>
+		<Intrinsic Name="attr" Expression="esttr&amp;0xFF000000"/>
+		<Intrinsic Name="isv" Expression="(esttr&amp;0x0F000000)==0"/>
+		<Intrinsic Name="isf" Expression="(esttr&amp;0x01000000)!=0"/>
+		<Intrinsic Name="isbr" Expression="(esttr&amp;0x02000000)!=0"/>
+		<Intrinsic Name="istr" Expression="(esttr&amp;0x04000000)!=0"/>
+		<Intrinsic Name="isjs" Expression="(esttr&amp;0x08000000)!=0"/>
+		<Intrinsic Name="isnew" Expression="(esttr&amp;0x10000000)!=0"/>
+		<Intrinsic Name="isary" Expression="(esttr&amp;0x20000000)!=0"/>
+		<Intrinsic Name="isnull" Expression="(esttr&amp;0x80000000)!=0"/>
 			<DisplayString Condition="size()==0x00CCCCCC">!! [invalid]</DisplayString>
 			<DisplayString Condition="isnull()">[{name(),s8} | Null]</DisplayString>
 			<DisplayString Condition="isary()">[{name(),s8} {size(),u} | Array]</DisplayString>
