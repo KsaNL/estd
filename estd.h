@@ -274,6 +274,7 @@ char* __CRTDECL esprintf_s(
 
 // 
 // #estr_encrypter
+//
 template <size_t N, size_t M=(N%4)?(N/4+1):(N/4)>
 class ecstr {
 public: 
@@ -293,6 +294,7 @@ private: unsigned m_enc[M]{};
 
 //
 // #estr_asprinter
+//
 typedef class estr {
 public:
 	size_t&size() { return this->esize; }
@@ -314,11 +316,11 @@ public:
 	estr(const wchar_t* fmt) : esize(0) {
 		esdata = _wcs2us(fmt, &esize);
 	}
-	estr(va_list va, const char* fmt) : esize(0) {
-		esdata = esvprintf_s(&esize, fmt, va);va_end(va);
-	}
-	estr(size_t ufmt, const char* fmt) : esdata(0) {
+	explicit estr(size_t ufmt, const char* fmt) : esdata(0) {
 		this->assign(fmt, ufmt); // asdata need nullptr
+	}
+	explicit estr(va_list va, const char* fmt) : esize(0) {
+		esdata = esvprintf_s(&esize, fmt, va);va_end(va);
 	}
 
 	template <size_t N>
@@ -333,9 +335,12 @@ public:
 	estr(const estr& asp) : esdata(asp.esdata), esize(asp.esize) {
 		*(size_t*)&asp.esdata = 0;
 	}
+	explicit estr(estr& asp) : esdata(0), esize(0) {
+		if (asp.esdata) this->assign(asp.esdata, asp.esize);
+	}
 
 	void assign(const char* src, size_t usr = ~0) {
-		if (esdata) efree(esdata);
+		if (esdata) efree(esdata); if (!src) src = "";
 
 		this->esize = usr = (usr == ~0) ? strlen(src) : usr;
 		if (this->esdata = ealloc(usr + 2)) {
@@ -344,10 +349,8 @@ public:
 		}
 	}
 	void append(const char* src, size_t usr = ~0) {
-		if (!this->esize) {
-			this->assign(src, usr);
-			return;
-		}
+		if (!this->esize) { this->assign(src, usr); return; }
+
 		if (usr == ~0) usr = strlen(src);
 		if (char* dat = ealloc(this->esize + usr + 2)) {
 			memcpy(dat, this->esdata, this->esize);
@@ -360,17 +363,17 @@ public:
 		}
 	}
 	void fmts(const char* fmt, ...) {
-		va_list va;  va_start(va, fmt);
+		va_list va;  va_start(va, fmt); // fmt_s support self
 		char* _s = esvprintf_s(&esize, fmt, va); va_end(va);
 
 		if (esdata) efree(esdata); this->esdata = _s;
 	}
-	void dump(estr esr) {
+	void dump(estr ectr) {
 		if (this->esdata) efree(esdata);
 
-		this->esdata = esr.esdata;
-		this->esize = esr.esize;
-		esr.esdata = nullptr;
+		this->esdata = ectr.esdata;
+		this->esize = ectr.esize;
+		ectr.esdata = nullptr;
 	}
 	void reserve(size_t usr) {
 		if (esdata) efree(esdata);
@@ -424,12 +427,9 @@ public:
 	//
 	// extra safe api 
 	// 
-	int toi() {
-		return this->esdata ? atoi(this->esdata) : 0;
-	}
-	long long tol() {
-		return this->esdata ? atoll(this->esdata) : 0;
-	}
+	int toi() { return this->esdata ? atoi(this->esdata) : 0; }
+	long long tol() { return this->esdata ? atoll(this->esdata) : 0; }
+
 	void byi(int _v) {
 		char _num[0x20]{ 0 }; _itoa_s(_v, _num, sizeof _num, 10);
 		this->assign(_num);
@@ -439,11 +439,11 @@ public:
 		this->assign(_num);
 	}
 	void byf(double _v) {
-		char _num[0x20]{ 0 }; _gcvt_s(_num,_v,3);
+		char _num[0x20]{0}; sprintfs(_num, "%.2f", _v);
 		this->assign(_num);
 	}
 	void byhex(long long _v) {
-		char _num[0x20]{ ' ',' ',0,0}; _i64toa_s(_v, _num + 2, sizeof _num - 2, 16); _strupr_s(_num); *(short*)_num = 'x0';
+		char _num[0x20]{0}; sprintfs(_num, "0x%llX", _v);
 		this->assign(_num);
 	}
 
@@ -553,13 +553,13 @@ public:
 	bool operator>=(const char(&str)[N]) { return 0==memcmp(str, this->esdata, N - 1); }
 	template <size_t N> // cmp obj left part
 	bool operator<=(const char(&obj)[N]) { return 0==memcmp(this->esdata,obj, this->esize); }
-	//
+	// Try to use += instead of + to reduce one copy
 	template <size_t N>
 	void operator+=(const char(&str)[N]) { this->append(str, N - 1); }
 	void operator+=(const estr& asr) { this->append(asr.esdata, asr.esize); }
 	template <size_t N> // add [asr = asr+"123"+"456"]
-	estr& operator+(const char(&str)[N]) { this->append(str, N - 1); return *this; }
-	estr& operator+(const estr& asr) { this->append(asr.esdata, asr.esize); return *this; }
+	estr operator+(const char(&str)[N]) { estr tmp(*this);  tmp.append(str, N - 1); return tmp; }
+	estr operator+(const estr& asr) { estr tmp(*this);  tmp.append(asr.esdata, asr.esize); return tmp; }
 	//
 	template <size_t N> // xor "\x99"
 	inline void operator^=(const char(&str)[N]) {for(size_t i=0;i<this->esize;i++) {for(size_t n=0;n<N-1;n++) {this->esdata[i]^=str[n];}}}
@@ -690,7 +690,7 @@ public:
 	}
 	size_t sizes() { return this->esargc; }
 
-	// *********** ±ê×¼µü´ú ************ //
+	// *********** æ ‡å‡†è¿­ä»£ ************ //
 	class iterator {
 	public:
 		iterator(estr* t, size_t sz) : itptr(t), itpos(sz) {}
