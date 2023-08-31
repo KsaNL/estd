@@ -316,29 +316,30 @@ public:
 	estr(const wchar_t* fmt) : esize(0) {
 		esdata = _wcs2us(fmt, &esize);
 	}
-	explicit estr(size_t ufmt, const char* fmt) : esdata(0) {
-		this->assign(fmt, ufmt); // asdata need nullptr
-	}
 	explicit estr(va_list va, const char* fmt) : esize(0) {
 		esdata = esvprintf_s(&esize, fmt, va);va_end(va);
+	}
+	explicit estr(size_t ufmt, const char* fmt) : esdata(0) {
+		this->assign(fmt, ufmt); // asdata need nullptr
 	}
 
 	template <size_t N>
 	estr(const char(&fmt)[N], ...) : esdata(0) {
-		if (strchr(fmt, '%')) {
-			va_list va;  va_start(va, (char*)fmt);
-			esdata = esvprintf_s(&esize, fmt, va); va_end(va);
-		} else this->assign(fmt); 
-		// can't use {constexpr (sizeof...(args) > 0)} with va_start
+		if (! *fmt) { this->assignull(); return; } va_list va;	
+		#if !_M_X64
+		__asm lea eax,[fmt]
+		__asm add eax, 2+2
+		__asm mov [va], eax
+		#else
+		va_start(va, (char*)fmt); // can't use {constexpr (sizeof...(args) > 0)} with va_start
+		#endif
+		esdata = esvprintf_s(&esize, fmt, va); va_end(va);
 	}
 	// #DEEPCOPY_FOR_RETURN
-	estr(const estr& asp) : esdata(asp.esdata), esize(asp.esize) {
-		*(size_t*)&asp.esdata = 0;
-	}
-	explicit estr(estr& asp) : esdata(0), esize(0) {
-		if (asp.esdata) this->assign(asp.esdata, asp.esize);
-	}
+	estr(const estr& asp) : esdata(asp.esdata), esize(asp.esize) { *(size_t*)&asp.esdata = 0; }
+	explicit estr(estr& asp) : esdata(0), esize(0) { ; if (asp.esdata) this->assign(asp.esdata, asp.esize); }
 
+	void assignull() { if (esdata) efree(esdata); if (esdata = ealloc(sizeof(int))) *(int*)esdata = 0; esize = 0; }
 	void assign(const char* src, size_t usr = ~0) {
 		if (esdata) efree(esdata); if (!src) src = "";
 
@@ -423,7 +424,6 @@ public:
 		}
 		return uz;
 	}
-
 	//
 	// extra safe api 
 	// 
