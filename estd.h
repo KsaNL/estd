@@ -3,8 +3,8 @@
  * >
  * > Project: Estd Header v4
  * > Copyright: Lioncky(Personal)
- * > Project	: https://github.com/Lioncky/estd
- * > Detail : Build in China, begin this at 07/12, latest update 08/30.
+ * > Project	: https://github.com/Lioncky/estd v5
+ * > Detail : Build in China, begin this at 07/12, latest update 2023/10.
  * More information about sprintf series api
  * https://learn.microsoft.com/zh-cn/cpp/c-runtime-library/format-specification-syntax-printf-and-wprintf-functions?view=msvc-170
  * 
@@ -34,22 +34,20 @@
 #	define esame 0
 #	define esdef  size_t(0)
 #	define enull ((char*)"")
-#	define espty estr(esdef,enull)
 #	define esdo(x) extern void x(); x();
-#	define esames(x,y) (strcmp(x,y)==0)
 #	define ealloc (char*)::malloc  // mallocer
 #	define efree(x) ::free((void*)x) // droper
 #	define emss(x)  # x // macro 2(to) string
 #	define enss(x) emss(x) // enum 2(to) string
 #	define einfunc __FUNCTION__ "->" enss(__LINE__) ":"
 #	define eoutf(func) __declspec(deprecated("Using " # func " instead..."))
-typedef unsigned __int64 uiint;
+typedef unsigned long long uiint;
 typedef unsigned char byte;
 typedef const char* ccstr;
-typedef size_t szr,uintr;
+typedef size_t sizer, uintr;
 typedef unsigned uint;
+typedef long long iint;
 typedef intptr_t intr;
-typedef __int64 iint;
 typedef char* cstr;
 typedef bool br;
 
@@ -297,35 +295,36 @@ private: unsigned m_enc[M]{};
 //
 typedef class estr {
 public:
-	size_t&size() { return this->esize; }
-	uint u8lenth() { return this->_u8(); }
-	int lenth() { return (int)this->esize; }
 
+	size_t&size() { return this->esize; }
+	int lenth() { return (int)this->esize; }
 	char* data() { return this->esdata; }
-	bool empty() { return this->esize==0; }
+	bool empty() { return this->esize == 0; }
 	const char* c_str() { return this->esdata; }
 	unsigned length() { return (unsigned)this->esize; }
 	char* data_end() { return this->esdata + this->esize - 1; }
 	unsigned hash() { return this->esize ? _us(this->esdata) : ~0; }
-	estr(size_t usz) : esize(usz) { if(esdata = ealloc(usz + sizeof(int))) *esdata='\0'; } // estr(0U) : dbg only 
-	estr() : esdata(0), esize(0) {}
+	unsigned length_utf8() { return this->_len_utf8(this->esdata); }
 
-	estr(const char* fmt) : esdata(0) {
-		this->assign(fmt, ~0);
+	// .ctor()
+	estr() : esdata(0), esize(0) {}
+	estr(const wchar_t* str) : esize(0) {
+		esdata = _wcs2us(str ? str : L"", &this->esize);
 	}
-	estr(const wchar_t* fmt) : esize(0) {
-		esdata = _wcs2us(fmt, &esize);
+	estr(const char* str) : esdata(0) { // boost ""
+		(str && *str) ? this->assign(str) : this->assignull();
 	}
 	explicit estr(va_list va, const char* fmt) : esize(0) {
-		esdata = esvprintf_s(&esize, fmt, va);va_end(va);
+		esdata = esvprintf_s(&this->esize, fmt, va); va_end(va);
 	}
-	explicit estr(size_t ufmt, const char* fmt) : esdata(0) {
-		this->assign(fmt, ufmt); // asdata need nullptr
+	explicit estr(size_t szf, const char* str, bool _ = true) : esdata(_ ? 0 : (char*)str) {
+		if (_) szf ? this->assign(str, szf) : this->assignull(); else this->esize = szf;
 	}
 
 	template <size_t N>
 	estr(const char(&fmt)[N], ...) : esdata(0) {
-		if (! *fmt) { this->assignull(); return; } va_list va;	
+		if (! *fmt) { this->assignull(); return; } va_list va;
+
 		#if !_M_X64
 		__asm lea eax,[fmt]
 		__asm add eax, 2+2
@@ -335,13 +334,16 @@ public:
 		#endif
 		esdata = esvprintf_s(&esize, fmt, va); va_end(va);
 	}
-	// #DEEPCOPY_FOR_RETURN
-	estr(const estr& asp) : esdata(asp.esdata), esize(asp.esize) { *(size_t*)&asp.esdata = 0; }
-	explicit estr(estr& asp) : esdata(0), esize(0) { ; if (asp.esdata) this->assign(asp.esdata, asp.esize); }
+
+	// estr only has deep copy, using api 'ret' to reduce copy; 'forget' is prevent free and MANUAL
+	estr(const estr& asp) : esdata(0), esize(0) { if (asp.esdata) this->assign(asp.esdata, asp.esize); }
+	estr& operator=(const estr& asr) { this->assign(asr.esdata, asr.esize); return *this; } //dump() reduce copy
+	char* forget() { char* dat = this->esdata; this->esdata = nullptr; return dat; } // #WARNAPI  MANUAL
+	estr ret() { return estr(this->size(), this->forget(), false); } // #WARNAPI reduce copy when return()
 
 	void assignull() { if (esdata) efree(esdata); if (esdata = ealloc(sizeof(int))) *(int*)esdata = 0; esize = 0; }
 	void assign(const char* src, size_t usr = ~0) {
-		if (esdata) efree(esdata); if (!src) src = "";
+		if (esdata) efree(esdata); if (!src) { this->assignull(); return; }
 
 		this->esize = usr = (usr == ~0) ? strlen(src) : usr;
 		if (this->esdata = ealloc(usr + 2)) {
@@ -350,7 +352,7 @@ public:
 		}
 	}
 	void append(const char* src, size_t usr = ~0) {
-		if (!this->esize) { this->assign(src, usr); return; }
+		if (this->empty()) { this->assign(src, usr); return; }
 
 		if (usr == ~0) usr = strlen(src);
 		if (char* dat = ealloc(this->esize + usr + 2)) {
@@ -389,67 +391,104 @@ public:
 		this->esize = 0;
 	}
 
-	//
-	// contain char or str
-	//
-	char* find(const char* buf) {
-		return this->esdata ? strstr(this->esdata, buf) : nullptr;
+	void byf(double _v) { char _num[0x20]{ 0 }; this->assign(_num, sprintfs(_num, "%.2f", _v)); }
+	void byhex(long long _v) { char _num[0x20]{ 0 }; this->assign(_num, sprintfs(_num, "0x%llX", _v)); }
+	void byi(int _v) { char _num[0x20]{ 0 }; _itoa_s(_v, _num, sizeof _num, 10); this->assign(_num); }
+	void byl(long long _v) { char _num[0x20]{ 0 }; _i64toa_s(_v, _num, sizeof _num, 10); this->assign(_num); }
+	void byuuid(unsigned u, unsigned _v = 0) { _v = u * 0x84664995; u *= _v;  this->fmts("%08X-%04X-%04X-%04X-%04X%08X", _v, u >> 16, u & 0xFFFF, (~u) >> 16, (~u) & 0xFFFF, ~_v); }
+	void bybin(const char* p, unsigned len) {
+		if (esdata) efree(esdata); char* w, *bk;
+
+		if ( p && (w = ealloc(len * sizeof(int))) ) {
+			unsigned char i, v = 0; bk = w; while (len--) {
+				v = *(unsigned char*)p++; i = v >> 4; v &= 15; // F5 15 5
+				*w++ = i < 10 ? i + '0' : i + ('A' - 10);
+				*w++ = v < 10 ? v + '0' : v + ('A' - 10); *w++ = ' ';
+			} *--w = '\0'; this->esdata = bk; this->esize = w - bk; return;
+		} this->assignull();
 	}
-	bool contain(int _c) {
-		return this->esdata ? !!strchr(this->esdata, _c) : false;
-	}
-	char* rfind(const char* sfind) {
+
+	//
+	// extra safe api 
+	// 
+	int toi() { return this->esdata ? atoi(this->esdata) : 0; }
+	double tof() { return this->esdata ? atof(this->esdata) : 0; }
+	long long tol() { return this->esdata ? atoll(this->esdata) : 0; }
+
+	// contain buffer api
+	char* find(int _c) { return this->esdata ? strchr(this->esdata, _c) : nullptr; }
+	char* rfind(int _c) { return this->esdata ? strrchr(this->esdata, _c) : nullptr; }
+	char* find(const char* str) { return str && this->esdata ? strstr(this->esdata, str) : nullptr; }
+	char* rfind(const char* str) {
 		size_t ufind; char* endstr;
 
-		if (this->esdata) {
-			ufind = strlen(sfind);
+		if (str && esdata) {
+			ufind = strlen(str);
 			endstr = this->esdata + this->esize;
 			do {
-				if (0==memcmp(--endstr, sfind, ufind))
+				if (0==memcmp(--endstr, str, ufind))
 					return endstr;
 			} while (endstr != this->esdata);
 		}
 		return nullptr;
 	}
-	size_t occurs(const char* _c, size_t _cz = ~0) {
-		size_t uz = 0; char* _s;
+	size_t occurs(int _c) { size_t uc = 0; char* _s; if (_s = this->esdata) while (_s = strchr(_s, _c)) { uc++; _s++; } return uc; }
+	size_t occurs(const char* str, size_t strl = ~0) {
+		size_t uc = 0; char* _s;
 
 		if (this->esdata) {
-			if (_s = strstr(this->esdata, _c)) {
-				if (_cz == ~0) _cz = strlen(_c);  
-				do { uz++; _s += _cz; }
-					while (_s = strstr(_s, _c));
-				return uz;
+			if (_s = strstr(this->esdata, str)) {
+				if (strl == ~0) strl = strlen(str);  
+				do { uc++; _s += strl; }
+					while (_s = strstr(_s, str));
+				return uc;
 			}
 		}
-		return uz;
+		return uc;
 	}
-	//
-	// extra safe api 
-	// 
-	int toi() { return this->esdata ? atoi(this->esdata) : 0; }
-	long long tol() { return this->esdata ? atoll(this->esdata) : 0; }
 
-	void byi(int _v) {
-		char _num[0x20]{ 0 }; _itoa_s(_v, _num, sizeof _num, 10);
-		this->assign(_num);
-	}
-	void byl(long long _v) {
-		char _num[0x20]{ 0 }; _i64toa_s(_v, _num, sizeof _num, 10);
-		this->assign(_num);
-	}
-	void byf(double _v) {
-		char _num[0x20]{0}; sprintfs(_num, "%.2f", _v);
-		this->assign(_num);
-	}
-	void byhex(long long _v) {
-		char _num[0x20]{0}; sprintfs(_num, "0x%llX", _v);
-		this->assign(_num);
+	template <size_t _M, size_t _N>
+	estr pickm(const char(&sleft)[_M], const char(&sright)[_N], bool bContain = false) { return taketry(trytake(sleft, sright, bContain)); }
+	estr pickl(const char* str) { str = this->find(str);	return estr(str ? str - this->esdata : 0, this->esdata); }
+	estr pickr(const char* str) { if (char* _ = this->find(str))	return _ + strlen(str); return ""; }
+	
+	//
+	// take index api
+	// index start form 0 not 1
+	//
+	estr takem(size_t _l, size_t _r) { if (_l < _r && this->esize >= _r) return estr(_r - _l, this->esdata + _l); return ""; }
+	estr taker(size_t _c) { return estr(this->esize >= _c ? _c : 0, this->esdata + this->esize - _c); }
+	estr takel(size_t _c) { return estr(this->esize >= _c ? _c : 0, this->esdata); }
+
+	//
+	// take() is used by trytake()'s result
+	//
+	estr taketry(uint tried) { return takem(tried >> 16, tried &= 0xFFFF); }	
+	template <size_t _M, size_t _N>  // use for [take] -> return left pos << 16 | right pos
+	unsigned trytake(const char(&sleft)[_M], const char(&sright)[_N], bool bContain = false) {
+		constexpr size_t N = _N - 1;
+		constexpr size_t M = _M - 1;
+		unsigned ucode = 0; char* p;
+		if (this->esdata && (p = strstr(this->esdata, sleft))) {
+			if (!bContain) p += (_M - 1);
+			ucode = unsigned((p - this->esdata)) << 16;
+			if (p = strstr(p, sright)) {
+				if (bContain) p += (_N - 1);
+				ucode |= ((p - this->esdata) & 0xFFFF);
+			}
+		} return ucode;
 	}
 
 	//
 	// string replace api 
 	//
+	void rm(char _c) {
+		return this->_rep(&_c, 1, "", 0);
+	}
+	template <size_t N>
+	void remove(const char(&_)[N]) {
+		return this->_rep(_, N - 1, "", 0);
+	}
 	void rep(int _c, int _to) {
 		if (!this->esize || !_to) return;
 
@@ -460,18 +499,11 @@ public:
 			}
 		}
 	}
-	template <size_t N>
-	void remove(const char(&_)[N]) {
-		return this->_rep(_, N - 1, "", 0);
-	}
 	template <size_t N, size_t M>
 	void replace(const char(&_)[N], const char(&_to)[M]) {
-		return this->_rep(_,N-1,_to,M-1);
+		return this->_rep(_, N - 1, _to, M - 1);
 	}
-	//
-	// cvt url to utf8 string
-	//
-	void cvt_url() {
+	void cvt_url() { // to utf8
 		char* _e, *ptr, *p; int iw = 0;
 		if (this->esdata) {
 			p = ptr = this->esdata;
@@ -484,106 +516,83 @@ public:
 			}*ptr = '\0'; this->esize = ptr - this->esdata;
 		}
 	}
+
 	//
 	// cmp left and same remove 
 	//
 	template <size_t _N,size_t N=_N-1>
 	bool cmprm(const char(&sleft)[_N]) {
 		if (this->esdata && esame == memcmp(sleft, this->esdata, N)) {
+			memcpy(this->esdata, this->esdata + N, this->esize - N+1);
 			this->esize -= N;
-			memcpy(this->esdata, this->esdata + N, this->esize + 1);
 			return true;
 		}
 		return false;
 	}
 
 	//
-	// cmp take middle
-	// left pos << 16 | right pos
-	// check by "i & 0xFFFF" for valid two parts
-	//
-	template <size_t _M, size_t _N>
-	unsigned cmpmid(const char(&sleft)[_M], const char(&sright)[_N], bool bContain = false) {
-		constexpr size_t N = _N - 1;
-		constexpr size_t M = _M - 1;
-		unsigned ucode = 0; char* p;
-		if (this->esdata && (p = strstr(this->esdata, sleft)) ) {
-			if (!bContain) p += (_M - 1);
-			ucode = unsigned((p - this->esdata)) << 16;
-			if (p = strstr(p, sright)) {
-				if (bContain) p += (_N - 1);
-				ucode |= ((p - this->esdata) & 0xFFFF);
-			} else ucode = 0;
-		}
-		return ucode;
-	}
-	estr getmid(unsigned ur) {
-		unsigned ul = ur >> 16; ur &= 0xFFFF;
-		return ur ? estr(ur - ul, this->data() + ul) : estr(esdef);
-	}
-
-	//
 	// #endby [warning]
-	// only can be just use for once
-	// this->asize will plus 1
-	// 
+	//		only can be just use for once
+	//		this->asize will plus 1
 	void endby(int str) {
-		if (this->esdata) {
-			*(short*)(this->esdata + this->esize++) = str&0xFFFF;
-		}
-	}
-	//
-	// #endremove [warning]
-	// this->asize will sub 1
-	// 
-	void endrm() {
-		if (this->esdata) {
-			*(this->esdata + --this->esize) = '\0';
-		}
+		if (this->esdata)
+			*(short*)(this->esdata + this->esize++) = (short)str;
 	}
 
+	//
+	// #endremove
+	//		this->asize will sub 1
+	void endrm() {
+		if (this->esdata) 
+			*(this->esdata + --this->esize) = '\0';		
+	}
+
+	//
+	// defines of operator
+	//
+	operator bool() { return !this->esize; }
+	operator char* () { return this->esdata; }
 	char* operator*() { return this->esdata; }
 	unsigned operator-() { return this->hash(); }
-	//
-	void operator=(const char* str) { this->assign(str); }
-	void operator=(const estr& str) { if (str.esdata != this->esdata) this->assign(str.esdata, str.esize); }
-	//
-	bool operator==(const char* str) { return esames(str, this->esdata); }
+	operator wchar_t* () { return this->as_wstr(); } // DANGEROUS
+	operator unsigned char* () { return (unsigned char*)this->esdata; }
+
+	bool operator!=(char* str) { return ! operator==(str); }
+	bool operator==(const char* str) { return this->esdata && 0==strcmp(str, this->esdata); }
+	bool operator==(const estr& str) { return this->esize == str.esize ? memcmp(str.esdata ? str.esdata : "", this->esdata ? this->esdata : "", this->esize) : 0; }
 	template <size_t N> // cmp this left part
-	bool operator>=(const char(&str)[N]) { return 0==memcmp(str, this->esdata, N - 1); }
+	bool operator>=(const char(&str)[N]) { return this->esdata && 0==memcmp(str, this->esdata, N - 1); }
 	template <size_t N> // cmp obj left part
-	bool operator<=(const char(&obj)[N]) { return 0==memcmp(this->esdata,obj, this->esize); }
+	bool operator<=(const char(&obj)[N]) { return this->esdata && 0==memcmp(this->esdata,obj, this->esize); }
 	// Try to use += instead of + to reduce one copy
 	template <size_t N>
 	void operator+=(const char(&str)[N]) { this->append(str, N - 1); }
 	void operator+=(const estr& asr) { this->append(asr.esdata, asr.esize); }
+	void operator+=(const char* str) { this->append(str); }
 	template <size_t N> // add [asr = asr+"123"+"456"]
-	estr operator+(const char(&str)[N]) { estr tmp(*this);  tmp.append(str, N - 1); return tmp; }
-	estr operator+(const estr& asr) { estr tmp(*this);  tmp.append(asr.esdata, asr.esize); return tmp; }
+	estr operator+(const char(&str)[N]) { estr tmp; tmp.reserve(this->esize + N - 1);memcpy(tmp.esdata, this->esdata, this->esize);memcpy(tmp.esdata + this->esize, str, N); return tmp.ret(); }
+	estr operator+(const estr& asr) { estr tmp; tmp.reserve(this->esize + asr.esize); memcpy(tmp.esdata, this->esdata, this->esize);memcpy(tmp.esdata + this->esize, asr.esdata, asr.esize); return tmp.ret(); }
+	estr operator+(const char* str) { estr tmp = *this; tmp.append(str); return tmp.ret(); }
+
 	//
 	template <size_t N> // xor "\x99"
-	inline void operator^=(const char(&str)[N]) {for(size_t i=0;i<this->esize;i++) {for(size_t n=0;n<N-1;n++) {this->esdata[i]^=str[n];}}}
-
-	operator int () { return (int)this->esize; }
-	operator char* () { return this->esdata; }
-	operator wchar_t* () { return this->as_wstr(); } // DANGEROUS
-	operator unsigned char* () { return (unsigned char*)this->esdata; }
-
-	// #WARNING MANUAL API
-	// Using this for transplant other class which destruction by '::free'
-	//
-	char* forget() { auto* dat = this->esdata; this->esdata = nullptr; return dat; }
+	inline void operator^=(const char(&str)[N]) { for(size_t i=0;i<this->esize;i++) {for(size_t n=0;n<N-1;n++) {this->esdata[i]^=str[n];}}}
 
 	~estr() { 
 		if (esdata) 
 			efree(esdata); 
 	}
-private:
-	char* esdata;
-	size_t esize;
 
-	unsigned _u8() {
-		int _u = 0; auto* pbyte = (unsigned char*)this->esdata;
+	// static public support functions
+	static int _hex_int(const char* pCalc) { int iRet = *pCalc;// 'a'->0xa
+		if ('a' <= iRet && 'f' >= iRet) return iRet - 'a' + 10;	
+		if ('A' <= iRet && 'F' >= iRet) return iRet - 'A' + 10;
+		if ('0' <= iRet && '9' >= iRet) return iRet - '0';
+		return 0;
+	};
+
+	static unsigned _len_utf8(const char* _) {
+		int _u = 0; auto* pbyte = (unsigned char*)_;
 		while (true) {
 			switch (*pbyte++) {
 				case 0: return _u; // return
@@ -595,20 +604,11 @@ private:
 			}
 		}
 	}
-	static
-	int _hex_int(const char* pCalc) { // 'a'->0xa
-		int iRet = *pCalc;
-		if ('a' <= iRet && 'f' >= iRet) {
-			return iRet - 'a' + 10;
-		}
-		if ('A' <= iRet && 'F' >= iRet) {
-			return iRet - 'A' + 10;
-		}
-		if ('0' <= iRet && '9' >= iRet) {
-			return iRet - '0';
-		}
-		return 0;
-	};
+
+private:
+	char* esdata;
+	size_t esize;
+
 	void _rep(const char* _, size_t _u,const char* _to, size_t _uto) {
 		if(!this->esdata) return;
 
@@ -631,6 +631,7 @@ private:
 			this->esdata = n_;
 		}
 	}
+
 	// 
 	// This function is DANGEROUS
 	// Cvt this to utf16 and then unsupport this->size()
@@ -638,13 +639,13 @@ private:
 	// 
 	wchar_t* as_wstr() {
 		size_t u; wchar_t* w;
-		if (this->esize != ~0) {
+		if (this->esize != 0) {
 
 			if (w = _us2wcs(this->esdata, &u)) {
 				efree(this->esdata);
 
 				this->esdata = (char*)w;
-				this->esize = ~0;
+				this->esize = 0;
 				return w;
 			}
 		}
@@ -654,12 +655,11 @@ private:
 
 typedef class estrs {
 public:
-
 	template <size_t _N, size_t N = _N - 1>
-	estrs(const char* src, const char (&div)[_N]) {
+	estrs(const char* src, const char (&div)[_N]) :esarg(0), esargc(0) {
 		static_assert(_N - 1 != 0, "Invalid_div_data");
-		char *p,*s,*e=(char*)""; p = s = (char*)src;
-		size_t u = 0;
+		char* p, * s, * e = (char*)""; size_t u = 0;
+		if (!src) return; p = s = (char*)src;
 		
 		// calc argv size
 		while (s = strstr(s, div)) { s += N; u++; }; 
@@ -690,7 +690,7 @@ public:
 	}
 	size_t sizes() { return this->esargc; }
 
-	// *********** æ ‡å‡†è¿­ä»£ ************ //
+	// *********** ±ê×¼µü´ú ************ //
 	class iterator {
 	public:
 		iterator(estr* t, size_t sz) : itptr(t), itpos(sz) {}
