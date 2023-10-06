@@ -33,20 +33,37 @@ To enable:
 -->
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 	<Type Name="estr">
-		<Intrinsic Name="data" Expression="esdata"/>
+		<Intrinsic Name="ws" Expression="esize==0"/>
 		<Intrinsic Name="size" Expression="esize"/>
-		<Intrinsic Name="capacity" Expression="esize+2"/>
+		<Intrinsic Name="data" Expression="esdata"/>
+		<Intrinsic Name="ptr" Expression="(intptr_t)data()"/>
+		<Intrinsic Name="capacity" Expression="esize+esize%4+4"/>
+		<Intrinsic Name="wdata" Expression="((wchar_t*)esdata)"/>
+		<Intrinsic Name="wsize" Expression="wcslen(wdata())"/>
+		<Intrinsic Name="wcapacity" Expression="(wsize()+1)*2"/>
 			<DisplayString Condition="(unsigned)size()==0xCCCCCCCC">!! [invalid]</DisplayString>
-			<DisplayString Condition="size()==~0">[{data(),su}]</DisplayString>
-			<DisplayString >{size(),u} : [{data(),s8}]</DisplayString>
+			<DisplayString Condition="size()==0 &amp;&amp; *data() != '\0'">[{data(),su} : {wsize(),u} ]</DisplayString>
+			<DisplayString Condition="size()==0 &amp;&amp; *data() == '\0'">["" empty]</DisplayString>
+			<DisplayString >[{data(),s8} : {size(),u}]</DisplayString>
 			<Expand>
-				<Item Name="[capacity]">capacity()</Item>
-				<Item Name="[size]">size()</Item>
-				<Item Name="[str]">data()</Item>
-				<ArrayItems>
+				<Item Name="[*]">ptr()</Item>
+				
+				<Item Condition="!ws()" Name="[capacity]">capacity()</Item>
+				<Item Condition="!ws()" Name="[size]">size()</Item>
+				<Item Condition="!ws()" Name="[str]">data()</Item>
+				<ArrayItems Condition="!ws()">
 					<Size>size()</Size>
 					<ValuePointer>(unsigned char*)data()</ValuePointer>
 				</ArrayItems>
+				
+				<Item Condition="ws()" Name="[capacity]">wcapacity()</Item>
+				<Item Condition="ws()" Name="[size]">wsize()</Item>
+				<Item Condition="ws()" Name="[wstr]">wdata()</Item>
+				<ArrayItems Condition="ws()">
+					<Size>wsize()</Size>
+					<ValuePointer>wdata()</ValuePointer>
+				</ArrayItems>
+				
 			</Expand>
 	</Type>
 	
