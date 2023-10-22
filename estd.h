@@ -7,7 +7,7 @@
  * > Detail : Build in China, begin this at 07/12, latest update 2023/10.6
  * More information about sprintf series api
  * https://learn.microsoft.com/zh-cn/cpp/c-runtime-library/format-specification-syntax-printf-and-wprintf-functions?view=msvc-170
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,7 +21,6 @@
  * limitations under the License.
  **/
 
-#pragma once
 #ifndef _ESTD_H_
 #	define _ESTD_H_
 #	include <corecrt_malloc.h>
@@ -31,8 +30,7 @@
 #	include <limits.h>// int_max
 #	include <stdio.h>// vsprintf
 
-#ifndef esame
-#	define esame 0
+#ifndef esnull
 #	define esnull ((char*)"")
 #	define ealloc (char*)::malloc 
 #	define esdo(x) extern void x(); x();
@@ -40,6 +38,7 @@
 #	define enss(x) emss(x) // enum 2(to) string
 #	define einfunc __FUNCTION__ "->" enss(__LINE__) ":"
 #	define eoutf(func) __declspec(deprecated("Using " # func " instead..."))
+
 typedef unsigned long long uiint;
 typedef unsigned char byte;
 typedef const char* ccstr;
@@ -58,7 +57,7 @@ typedef bool br;
 #	define dbi
 # endif
 
-#endif // esame
+#endif // esnull
 
 #ifndef __UWSTR__
 #	define __UWSTR__ // Unique (Wide) String 
@@ -87,12 +86,15 @@ constexpr unsigned _uxchg(const unsigned _u) { // 0x12345678 >> 0x78563412 LE->B
 #define _uint(x) (*(unsigned*)(x)) // _us == uhash _uint == _uu
 #endif
 
-//
+_Check_return_opt_ _CRT_STDIO_INLINE
+bool __CRTDECL esame(void const* _Buf1, void const* _Buf2, size_t _Size) { return 0 == memcmp(_Buf1, _Buf2, _Size); }
+
+// #_istr_len
 // 'ad' = 2 'abcd' = 4
 // 
 _Success_(return >= 0)
 _Check_return_opt_ _CRT_STDIO_INLINE
-constexpr int _istr_len(const int div) {
+constexpr int eintl(const int div) {
 	if (!div) return  0;
 	else if (div < 0x100) return  1;
 	else if (div & (0xFF << 24)) return 4;
@@ -162,7 +164,7 @@ char* __CRTDECL _esvprintf(
 	char* _s; size_t _u;
 
 	if ((_u = evcprintf(_Format, _ArgList)) > 0) {
-		if (_s = (va_list)malloc(_u <<= 1 )) {
+		if (_s = (va_list)malloc(_u <<= 1)) {
 			evprintf(_s, _u, _Format, _ArgList);
 			if (_Len) *_Len = (_u >> 1);
 			return _s;
@@ -170,22 +172,22 @@ char* __CRTDECL _esvprintf(
 	}
 	return nullptr;
 }
- 
+
 _CRT_STDIO_INLINE
 char* __CRTDECL _esprintf(
-	_Out_ _Always_(_Post_z_) size_t* _Len,
+	_Out_ _Always_(_Post_z_) size_t * _Len,
 	_In_z_ _Printf_format_string_	char const* const _Format,
 	...) {
 	va_list _ArgList;
 	va_start(_ArgList, _Format);
-	const auto* _Res = 
+	const auto* _Res =
 		_esvprintf(_Len, _Format, _ArgList);
 	va_end(_ArgList);
 	return (char*)_Res;
 }
 #endif // esvprintf
 
-#ifndef us2wcs
+#ifndef wcs2us
 #	define wcs2us _wcs2us
 #	define us2wcs _us2wcs
 
@@ -195,8 +197,8 @@ _Check_return_opt_ _CRT_STDIO_INLINE
 wchar_t* _us2wcs(
 	_In_z_ const char* ustr,
 	_Out_ size_t * opt = 0) {
-	unsigned u = 0; wchar_t* bak, *dst;
-	bak = dst = (wchar_t*)ealloc((strlen(ustr)+1) << 1);
+	unsigned u = 0; wchar_t* bak, * dst;
+	bak = dst = (wchar_t*)ealloc((strlen(ustr) + 1) << 1);
 	if (!dst) return nullptr;
 
 	while (u = *ustr++) {
@@ -217,7 +219,7 @@ wchar_t* _us2wcs(
 			u |= (*ustr++ & 0x3F);
 		}
 		*dst++ = (wchar_t)u;
-	} *dst = L'\0';	
+	} *dst = L'\0';
 	if (opt) *opt = dst - bak; *dst = '\0';
 	return bak;
 }
@@ -226,11 +228,11 @@ wchar_t* _us2wcs(
 _Success_(return != 0)
 _Check_return_opt_ _CRT_STDIO_INLINE
 char* _wcs2us(
-	_In_z_ const wchar_t* wbuf, 
+	_In_z_ const wchar_t* wbuf,
 	_Out_ size_t * opt = 0) {
-	unsigned lowSurrogate, u=0;
+	unsigned lowSurrogate, u = 0;
 	char* dst = ealloc((wcslen(wbuf) << 1) | 2), * bak = dst;
-	if(!dst) return nullptr;
+	if (!dst) return nullptr;
 	while (u = *wbuf++) {
 
 		if (u < 0x80) *dst++ = u;
@@ -252,7 +254,8 @@ char* _wcs2us(
 				*dst++ = 0x80 | ((u & 0x3F000) >> 12);
 				*dst++ = 0x80 | ((u & 0xFC0) >> 6);
 				*dst++ = 0x80 | (u & 0x3F);
-			} else dbk ("ERROR NO Surrogate");
+			}
+			else dbk("ERROR NO Surrogate");
 		}
 		else goto _UTF_3;
 	}
@@ -264,17 +267,18 @@ char* _wcs2us(
 // 
 // #estr_encrypter
 //
-template <size_t N, size_t M=(N%4)?(N/4+1):(N/4)>
+template <size_t N, size_t M = (N % 4) ? (N / 4 + 1) : (N / 4)>
 class ecstr {
-public: 
+public:
 	constexpr ecstr(const wchar_t(&str)[N]) {
 		for (int i = 0, j = 0; i < M; i++) {
 			m_enc[i] = str[j++]; if (j == N)break;
-			m_enc[i] |= str[j++]<<8;if(j==N)break;
-			m_enc[i] |= str[j++]<<16;if(j==N)break;
-			m_enc[i] |= str[j++]<<24;if(j==N)break; 
-	}	} // operator char*() noexcept -- Can't for constexpr
-	operator char*() const noexcept { return (char*)m_enc; }
+			m_enc[i] |= str[j++] << 8; if (j == N)break;
+			m_enc[i] |= str[j++] << 16; if (j == N)break;
+			m_enc[i] |= str[j++] << 24; if (j == N)break;
+		}
+	} // operator char*() noexcept -- Can't for constexpr
+	operator char* () const noexcept { return (char*)m_enc; }
 	char* operator*() const noexcept { return (char*)m_enc; }
 	constexpr unsigned& operator[](_In_range_(0, M - 1) size_t _Pos) noexcept { return m_enc[_Pos]; }
 	constexpr const unsigned& operator[](_In_range_(0, M - 1) size_t _Pos) const noexcept { return m_enc[_Pos]; }
@@ -313,14 +317,15 @@ public:
 		if (!_unsafe) szf ? (void)this->assign(str, szf) : this->_reset(); else this->unsafe_set(str, szf);
 	}
 
-	template <size_t N> estr(const char(&fmt)[N], ...) : esdata(0) { va_list va;
-		#if !_M_X64
-		__asm lea eax,[fmt]
-		__asm add eax, 2+2
-		__asm mov [va], eax
-		#else
+	template <size_t N> estr(const char(&fmt)[N], ...) : esdata(0) {
+		va_list va;
+#if !_M_X64
+		__asm lea eax, [fmt]
+			__asm add eax, 2 + 2
+		__asm mov[va], eax
+#else
 		va_start(va, (char*)fmt); // x86 unsupport &fmt
-		#endif
+#endif
 		this->esdata = esvprintf(&esize, fmt, va);
 		va_end(va); if (!this->esdata) this->_reset();
 	}
@@ -334,35 +339,36 @@ public:
 
 	bool clear() { this->_free(); this->_reset(); return true; }
 	void fmts(const char* fmt, ...) { // fmt_s support self
-		va_list va;  va_start(va, fmt); 
+		va_list va;  va_start(va, fmt);
 		cstr _s = esvprintf(&this->esize, fmt, va); va_end(va);
 
 		this->_free(); if (_s) this->esdata = _s; else this->_reset();
 	}
 	bool assign(const char* src, size_t _ = ~0) {
-		if (!src) { this->clear(); return true; } 
+		if (!src) { this->clear(); return true; }
 		if (_ == ~0) _ = strlen(src);
 
-		this->_free(); 
-		if ( this->_alloc(_) ) {
+		this->_free();
+		if (this->_alloc(_)) {
 			*(this->esdata + _) = '\0';
 			memcpy(this->esdata, src, _);
 			return true;
 		} return false;
 	}
 	bool append(const char* src, size_t _ = ~0) {
+		if (!src) { return false; } if (_ == ~0) _ = strlen(src);
 		if (this->empty()) { this->assign(src, _); return true; }
-		if (_ == ~0) _ = strlen(src);
 
 		cstr bak = this->unsafe_forget();
 		size_t szbak = this->esize;
-		if ( this->_alloc(this->esize + _) ) {
+		if (this->_alloc(this->esize + _)) {
 			memcpy(this->esdata, bak, szbak);
 			memcpy(this->esdata + szbak, src, _);
 			*(this->esdata + this->esize) = '\0';
 
-			if( bak != esnull ) free(bak); return true;
-		} else { this->esdata = bak; this->esize = szbak; return false;}
+			if (bak != esnull) free(bak); return true;
+		}
+		else { this->esdata = bak; this->esize = szbak; return false; }
 	}
 	void dump(estr ectr) {
 		this->_free();
@@ -383,14 +389,12 @@ public:
 	//
 	// #endremove
 	//		this->asize will sub 1
-	//
 	bool endrm() { if (this->fo()) { *(this->esdata + --this->esize) = '\0'; return true; } return false; }
 
 	//
 	// #endby [warning]
 	//		only can be just use for once
 	//		this->asize will plus 1
-	//
 	bool endby(int str) { if (this->fo()) { *(short*)(this->esdata + this->esize++) = (short)str; return true; } return false; }
 
 	void byi(int _v) { this->fmts("%d", _v); }
@@ -399,15 +403,16 @@ public:
 	void byf(double _v, int count = 2) { char fmt[8] = "%._f"; fmt[2] = count + '0'; this->fmts(fmt, _v); }
 	void byuuid(unsigned u, unsigned _v = 0) { _v = u * 0x84664995; u *= _v;  this->fmts("%08X-%04X-%04X-%04X-%04X%08X", _v, u >> 16, u & 0xFFFF, (~u) >> 16, (~u) & 0xFFFF, ~_v); }
 	void bybin(const char* p, unsigned len) {
-		char* w, *bk; this->_free();
+		char* w, * bk; this->_free();
 
-		if ( p && this->_alloc(len * 3 - 1) ) {
-			unsigned char i, v = 0; bk = w =  this->esdata; while (len--) {
-				v = *(unsigned char*)p++; i = v >> 4; v &= 0x0F; 
+		if (p && this->_alloc(len * 3 - 1)) {
+			unsigned char i, v = 0; bk = w = this->esdata; while (len--) {
+				v = *(unsigned char*)p++; i = v >> 4; v &= 0x0F;
 				*w++ = i < 10 ? i + '0' : i + ('A' - 10); // F5 15   5
 				*w++ = v < 10 ? v + '0' : v + ('A' - 10); *w++ = ' ';
 			} *--w = '\0'; this->esize = w - bk; // remove end of  ' '
-		} else this->_reset();
+		}
+		else this->_reset();
 	}
 
 	//
@@ -430,7 +435,7 @@ public:
 			ufind = strlen(str);
 			endstr = this->esdata + this->esize;
 			do {
-				if (0==memcmp(--endstr, str, ufind))
+				if (0 == memcmp(--endstr, str, ufind))
 					return endstr;
 			} while (endstr != this->esdata);
 		}
@@ -440,10 +445,9 @@ public:
 	size_t occurs(const char* str, size_t strl = ~0) {
 		size_t uc = 0; char* _s;
 
-		if (this->fo() && (_s = strstr(this->esdata, str)) ) {		
-			if (strl == ~0) strl = strlen(str);  
-			do { uc++; _s += strl; }
-				while (_s = strstr(_s, str));
+		if (this->fo() && (_s = strstr(this->esdata, str))) {
+			if (strl == ~0) strl = strlen(str);
+			do { uc++; _s += strl; } while (_s = strstr(_s, str));
 		}
 		return uc;
 	}
@@ -455,7 +459,7 @@ public:
 	estr pickm(const char(&sleft)[_M], const char(&sright)[_N], bool bContain = false) { return taketry(trytake(sleft, sright, bContain)); }
 	estr pickl(const char* str) { str = this->find(str);	return estr(str ? str - this->esdata : 0, this->esdata); }
 	estr pickr(const char* str) { if (char* _ = this->find(str))	return _ + strlen(str); return ""; }
-	
+
 	//
 	// #SAFE take by index
 	// index start form 0 not 1
@@ -467,19 +471,19 @@ public:
 	//
 	// #SAFE taketry() is used by trytake()'s result
 	//
-	estr taketry(uint tried) { return takem(tried >> 16, tried & 0xFFFF); }	
+	estr taketry(uint tried) { return takem(tried >> 16, tried & 0xFFFF); }
 	template <size_t _M, size_t _N>  // use for [take] -> return left pos << 16 | right pos
 	unsigned trytake(const char(&sleft)[_M], const char(&sright)[_N], bool bContain = false) {
 		constexpr size_t N = _N - 1; constexpr size_t M = _M - 1;
-		
+
 		unsigned ucode = 0; char* p;
-		if (this->esize && (p = this->find(sleft)) ) {
+		if (this->esize && (p = this->find(sleft))) {
 			if (!bContain) p += M;
 			ucode = (unsigned)(p - this->esdata) << 16;
 
 			if (p = strstr(p, sright)) {
 				if (bContain) p += N;
-				ucode |= ( (p - this->esdata) & 0xFFFF );
+				ucode |= ((p - this->esdata) & 0xFFFF);
 			}
 		}
 		return ucode;
@@ -502,7 +506,7 @@ public:
 			char* dat = this->esdata;
 			while (dat = strchr(dat, _c)) {
 				*dat++ = _to;
-			 }
+			}
 		}
 	}
 	template <size_t N, size_t M>
@@ -514,7 +518,7 @@ public:
 	// #SAFE cvt url
 	//
 	void cvt_url() { // to utf8
-		char* _e, *ptr, *p; int w;
+		char* _e, * ptr, * p; int w;
 		if (this->fo()) {
 			p = ptr = this->esdata; w = 0;
 			_e = this->esdata + this->esize;
@@ -522,7 +526,7 @@ public:
 				w = *p; if (w == '%') {
 					w = this->_hex_int(++p) << 4;
 					w |= this->_hex_int(++p);
-				 } p++; *(unsigned char*)ptr++ = w;
+				} p++; *(unsigned char*)ptr++ = w;
 			}*ptr = '\0'; this->esize = ptr - this->esdata;
 		}
 	}
@@ -532,8 +536,8 @@ public:
 	//
 	template <size_t _N, size_t N = _N - 1>
 	bool cmprm(const char(&sleft)[_N]) {
-		if (this->fo() && esame == memcmp(sleft, this->esdata, N)) {
-			memcpy(this->esdata, this->esdata + N, this->esize - _N);
+		if (this->fo() && esame(sleft, this->esdata, N)) {
+			memcpy(this->esdata, this->esdata + N, this->esize - N + 2);
 			this->esize -= N;
 			return true;
 		} return false;
@@ -550,13 +554,13 @@ public:
 	operator wchar_t* () { return this->as_wstr(); } // DANGEROUS
 	operator unsigned char* () { return (unsigned char*)this->esdata; }
 
-	bool operator!=(char* str) { return ! operator==(str); }
-	bool operator==(const char* str) { return this->_valid() && memcmp(str, this->esdata, this->size() + 1); }
-	bool operator==(const estr& str) { return (this->_valid() && this->esize == str.esize) ? memcmp(str.esdata ? str.esdata : "", this->esdata ? this->esdata : "", this->esize) : false; }
+	bool operator!=(char* str) { return !operator==(str); }
+	bool operator==(const char* str) { return this->_valid() && esame(str, this->esdata, this->size() + 1); }
+	bool operator==(const estr& str) { return (this->_valid() && this->esize == str.esize) ? esame(str.esdata ? str.esdata : "", this->esdata ? this->esdata : "", this->esize) : false; }
 	template <size_t N> // cmp this left part
-	bool operator>=(const char(&str)[N]) { return this->_valid() && esame ==memcmp(str, this->esdata, N - 1); }
+	bool operator>=(const char(&str)[N]) { return this->_valid() && esame(str, this->esdata, N - 1); }
 	template <size_t N> // cmp obj left part
-	bool operator<=(const char(&obj)[N]) { return this->_valid() && esame ==memcmp(this->esdata,obj, this->esize); }
+	bool operator<=(const char(&obj)[N]) { return this->_valid() && esame(this->esdata, obj, this->esize); }
 
 	// Try to use += instead of + to reduce one copy
 	void operator+=(const char* str) { this->append(str); }
@@ -566,13 +570,14 @@ public:
 	estr operator+(const estr& asr) { estr tmp; tmp.reserve(this->esize + asr.esize); memcpy(tmp.esdata, this->esdata, this->esize); memcpy(tmp.esdata + this->esize, asr.esdata, asr.esize); tmp.endl(); return tmp.ret(); }
 
 	template <size_t N> // #SAFE xor api "\x99"
-	inline void operator^=(const char(&str)[N]) { for(size_t i=0;i<this->esize;i++) {for(size_t n=0;n<N-1;n++) {this->esdata[i]^=str[n];}}}
+	inline void operator^=(const char(&str)[N]) { for (size_t i = 0; i < this->esize; i++) { for (size_t n = 0; n < N - 1; n++) { this->esdata[i] ^= str[n]; } } }
 
 	~estr() { this->_free(); }
 
 	// static public support functions
-	static int _hex_int(const char* pCalc) { int iRet = *pCalc;// 'a'->0xa
-		if ('a' <= iRet && 'f' >= iRet) return iRet - 'a' + 10;	
+	static int _hex_int(const char* pCalc) {
+		int iRet = *pCalc;// 'a'->0xa
+		if ('a' <= iRet && 'f' >= iRet) return iRet - 'a' + 10;
 		if ('A' <= iRet && 'F' >= iRet) return iRet - 'A' + 10;
 		if ('0' <= iRet && '9' >= iRet) return iRet - '0';
 		return 0;
@@ -582,12 +587,12 @@ public:
 		int _u = 0; auto* pbyte = (unsigned char*)_;
 		while (true) {
 			switch (*pbyte++) {
-				case 0: return _u; // return
-				case 0xE4ui8:case 0xE7ui8:
-				case 0xE5ui8:case 0xE8ui8:
-				case 0xE6ui8:case 0xE9ui8:
-					_u++; pbyte += 2;break;
-				default:		_u++;		break;
+			case 0: return _u; // return
+			case 0xE4ui8:case 0xE7ui8:
+			case 0xE5ui8:case 0xE8ui8:
+			case 0xE6ui8:case 0xE9ui8:
+				_u++; pbyte += 2; break;
+			default:		_u++;		break;
 			}
 		}
 	}
@@ -598,12 +603,12 @@ private:
 
 	bool  _valid() { return !(this->esdata == esnull); }
 	void  _reset() { this->esize = 0; this->esdata = esnull; } // #UNSAFE_RESET
-	bool  _same(char* ptr) { return ptr && esame == memcmp(ptr, this->esdata, this->esize + 1); }
-	char* _alloc(size_t _) { if ( this->esdata = ealloc(sizeof(int) + (_  + _ % sizeof(int))) ) { this->esize = _; return this->esdata; } this->_reset(); return nullptr; }
-	void  _free() { 
+	bool  _same(char* ptr) { return ptr && esame(ptr, this->esdata, this->esize + 1); }
+	char* _alloc(size_t _) { if (this->esdata = ealloc(sizeof(int) + (_ + _ % sizeof(int)))) { this->esize = _; return this->esdata; } this->_reset(); return nullptr; }
+	void  _free() {
 		if (this->esdata == esnull);
-			else if (this->esdata)
-					free(this->esdata);
+		else if (this->esdata)
+			free(this->esdata);
 	}
 	void _rep(const char* _, size_t _u, const char* _to, size_t _ut) {
 		if (this->empty()) return;
@@ -635,9 +640,9 @@ private:
 	// 
 	wchar_t* as_wstr() {
 		size_t u; wchar_t* w;
-		if ( !(this->esize == 0) ) {
+		if (!(this->esize == 0)) {
 
-			if (w = _us2wcs(this->esdata, &u)) {
+			if (w = us2wcs(this->esdata, &u)) {
 				this->_free();
 
 				this->esdata = (char*)w;
@@ -646,22 +651,22 @@ private:
 			}
 		}
 		return (wchar_t*)this->esdata;
-	 }
+	}
 } *estr_t;
 
 typedef class estrs {
 public:
 	template <size_t _N, size_t N = _N - 1>
-	estrs(const char* src, const char (&div)[_N]) :esarg(0), esargc(0) {
+	estrs(const char* src, const char(&div)[_N]) :esarg(0), esargc(0) {
 		static_assert(_N - 1 != 0, "Invalid_div_data");
 		char* p, * s, * e = (char*)""; size_t u = 0;
 		if (!src) return; p = s = (char*)src;
-		
+
 		// calc argv size
-		while (s = strstr(s, div)) { s += N; u++; }; 
+		while (s = strstr(s, div)) { s += N; u++; };
 		this->esarg = new estr[++u];
 		this->esargc = u; s = p;
-		
+
 		for (size_t i = 0; i < u; i++) {
 			auto& asp = this->esarg[i];
 
@@ -695,7 +700,7 @@ public:
 		iterator& operator++() { this->itpos++; return *this; }
 		bool operator !=(iterator& it) { return this->itpos != it.itpos; }
 		estr& operator*() { return itptr[itpos]; }
-	private:	
+	private:
 		estr* itptr; size_t itpos;
 	};
 	iterator end() { return iterator(this->esarg, this->esargc); }
@@ -748,9 +753,9 @@ public:
 	bool parse(const char* j_str, size_t j_size = ~0, cstr jstr = 0) {
 		if (this->esuh == 0) {
 
-			if (this->esttr & ej_json) 
+			if (this->esttr & ej_json)
 				this->destory();
-			
+
 			if ((jstr = zip_json(j_str, j_size))) {
 				this->parse_json(this, jstr, (cstr)"Obj", 1);
 				this->esori = jstr;
@@ -775,7 +780,7 @@ public:
 		return false;
 	}
 
-	ejson& operator[] (const char *name) {
+	ejson& operator[] (const char* name) {
 		dbi(!this->is_json(), this);
 
 		auto i = this->count();
@@ -801,10 +806,10 @@ public:
 	//
 	// replace with string will alloc new memory
 	//
-	ejson &operator= (const char* val) {
+	ejson& operator= (const char* val) {
 		if (this->valid()) {
 			this->destory();
-				
+
 			this->esori = _strdup(val);
 			this->esttr = ej_new | ej_string | (ej_size & strlen(val));
 			this->emap = (intptr_t)this->esori;
@@ -821,7 +826,7 @@ public:
 	//
 	ejson& operator=(const int& val) { return operator=((size_t)(val)); }
 	ejson& operator=(const size_t& val) {
-		if (this->is_value()) { 
+		if (this->is_value()) {
 			this->by(val);
 		}
 		return *this;
@@ -829,19 +834,19 @@ public:
 	bool operator==(const char* str) { return this->esori ? 0 == strcmp(str, this->esori) : false; }
 
 	operator bool() { return this->valid(); }
-	operator char*() { return this->operator*(); }
-	char* operator*() { return (this->valid() && this->esori)? this->esori : (char*)""; }
-	#ifdef _WIN64
+	operator char* () { return this->operator*(); }
+	char* operator*() { return (this->valid() && this->esori) ? this->esori : (char*)""; }
+#ifdef _WIN64
 	operator size_t () { return this->as<size_t>(); }
-	#endif
+#endif
 
-	operator int () { return this->as<int>(); }
-	operator long () { return this->as<long>(); }
-	operator double () { return this->as<double>(); }
-	operator float () { return float(this->as<double>()); }
-	operator long long () { return this->as<long long>(); }
-	operator unsigned  () { return this->as<unsigned>();  }
-	operator unsigned long () { return this->as<unsigned>(); }
+	operator int() { return this->as<int>(); }
+	operator long() { return this->as<long>(); }
+	operator double() { return this->as<double>(); }
+	operator float() { return float(this->as<double>()); }
+	operator long long() { return this->as<long long>(); }
+	operator unsigned() { return this->as<unsigned>(); }
+	operator unsigned long() { return this->as<unsigned>(); }
 	operator unsigned char* () { return this->as<unsigned char*>(); }
 
 	bool valid() { return !this->isfather(); }
@@ -857,8 +862,8 @@ private:
 	uint esuh; // hash
 
 	template <typename T>
-	decltype(auto) as() { 
-		return *(T*)&emap; 
+	decltype(auto) as() {
+		return *(T*)&emap;
 	}
 
 	template <typename T>
@@ -873,15 +878,15 @@ private:
 	inline bool is_value() { return (esttr & ej_type) == ej_value; }
 	inline bool is_null() { return (esttr & ej_null) != 0; }
 
-	inline bool is_vals()	{ return !!(esttr & ej_vals); }
-	inline bool is_strs()	{ return !!(esttr & ej_strs); }
-	inline bool is_jss()	{ return !!(esttr & ej_jss); }
+	inline bool is_vals() { return !!(esttr & ej_vals); }
+	inline bool is_strs() { return !!(esttr & ej_strs); }
+	inline bool is_jss() { return !!(esttr & ej_jss); }
 
-	inline bool is_new()	{ return !!(esttr & ej_new); }
-	inline bool is_json()	{ return !!(esttr & ej_json); }
-	inline bool is_bool()	{ return !!(esttr & ej_bool); }
-	inline bool is_ary()	{ return !!(esttr & ej_array); }
-	inline bool is_str()	{ return !!(esttr & ej_string); }
+	inline bool is_new() { return !!(esttr & ej_new); }
+	inline bool is_json() { return !!(esttr & ej_json); }
+	inline bool is_bool() { return !!(esttr & ej_bool); }
+	inline bool is_ary() { return !!(esttr & ej_array); }
+	inline bool is_str() { return !!(esttr & ej_string); }
 
 	void destory() {
 		if (this->isfather()) {
@@ -900,7 +905,7 @@ private:
 				delete[](ejson*)emap;
 			}
 		}
-	}	
+	}
 
 	static void null_json(ejson* jss) {
 		auto& js = *jss;
@@ -915,17 +920,17 @@ private:
 
 	// 
 	// compress the json and malloc
-	static 
-	char* zip_json(const char* j_str, size_t j_sz = ~0) {
+	static
+		char* zip_json(const char* j_str, size_t j_sz = ~0) {
 		if (j_sz == ~0) j_sz = strlen(j_str);
 		if (j_sz == 0) {
 			dbk(j_str, j_sz);
 			return nullptr;
 		}
-		char* jw, * jbak; 
+		char* jw, * jbak;
 		unsigned ins = 0, _c = 0;
 		if (jw = ealloc(j_sz + 2)) {
-			jbak = jw; 
+			jbak = jw;
 			while (*j_str) {
 				if (ins & 1) {
 					if (*j_str == '\\') {
@@ -943,14 +948,14 @@ private:
 				else {
 					// no ins kill space
 					switch (*j_str) {
-						case ':':  _c++; goto _def;
-						case '"': ins^=1; goto _def;
-						case '[':case '{': ins ^=2; goto _def;
-						case ']':case '}': ins ^=2; goto _def;
-						case ' ':case '\t':case '\n':case '\r': j_str++; break;
-						default: _def:
-							*jw++ = *j_str++;
-							break;
+					case ':':  _c++; goto _def;
+					case '"': ins ^= 1; goto _def;
+					case '[':case '{': ins ^= 2; goto _def;
+					case ']':case '}': ins ^= 2; goto _def;
+					case ' ':case '\t':case '\n':case '\r': j_str++; break;
+					default: _def:
+						*jw++ = *j_str++;
+						break;
 					}
 				}
 			}
@@ -963,9 +968,9 @@ private:
 		}
 		return nullptr;
 	}
-	
-	static 
-	void array_json(ejson* jss, cstr p) {
+
+	static
+		void array_json(ejson* jss, cstr p) {
 		ejson& js = *jss; cstr s;
 		uint u = calcary_json(p); dbi(u == ~0);
 		if (u > 0 && u != ~0) {
@@ -977,20 +982,20 @@ private:
 			if (*p == '{') {
 				js.esttr |= ej_json;
 				do {
-					s = next_json(p);if (s)*s ='\0';
+					s = next_json(p); if (s)*s = '\0';
 					parse_json(jss++, p, (cstr)"Obj", 1);
 					p = s + R"(},)"_l;
 				} while (*p == '{');
 				return;
 			}
-		
+
 			if (*p == '"') {
 				js.esttr |= ej_string; p++;
 				do {
-					s = strstr(p, R"(",")"); if (s)*s ='\0';
+					s = strstr(p, R"(",")"); if (s)*s = '\0';
 					auto& ss = *jss++; ss.esori = (cstr)p;
 					ss.emap = (iint)(p); ss.ename = "Ary";
-					ss.esttr = ej_string|(ej_size&(s?(s-p):strlen(p)-1)); // end of '"'
+					ss.esttr = ej_string | (ej_size & (s ? (s - p) : strlen(p) - 1)); // end of '"'
 					if (s) p = s + R"(",")"_l; else *(p + ss.count()) = '\0';
 				} while (s);
 				return;
@@ -1002,93 +1007,94 @@ private:
 					s = strstr(p, ","); if (s)*s = '\0';
 					auto& ss = *jss++; ss.esori = (cstr)p;
 					ss.emap = atoll(p); ss.ename = "Ary";
-					ss.esttr = (ej_size&(s?(s-p):strlen(p)));
+					ss.esttr = (ej_size & (s ? (s - p) : strlen(p)));
 					if (s)p = s + ","_l;
-				} while (s); 
+				} while (s);
 				return;
 			}
 			js.esttr |= ej_bool;
 			do {
 				s = strstr(p, ","); if (s)*s = '\0';
-				auto& ss = *jss++; ss.esori = (cstr)p; 
-				ss.emap = (*p=='t')||(*p=='T'); ss.ename = "Ary";
-				ss.esttr = (ej_size&(s?(s-p):strlen(p)));
+				auto& ss = *jss++; ss.esori = (cstr)p;
+				ss.emap = (*p == 't') || (*p == 'T'); ss.ename = "Ary";
+				ss.esttr = (ej_size & (s ? (s - p) : strlen(p)));
 				p = s + ","_l;
 			} while (s);
 			return;
 		}
 	}
-	static 
-	char* parse_json(ejson* jss, cstr v, cstr n, uint uh = 0) {
+	static
+		char* parse_json(ejson* jss, cstr v, cstr n, uint uh = 0) {
 		auto& js = *jss;
 		js.esuh = uh ? uh : _us(n);
 		js.esori = v;  js.ename = n;
 		switch (*v) {
-			case '-':case '.':case '0':
-			case '1':case '2':case '3':case '4':
-			case '5':case '6':case '7':case '8':case '9':
-				if(n = strchr(v, ','))*n='\0'; else n=v+strlen(v); dbi(!n, v);
+		case '-':case '.':case '0':
+		case '1':case '2':case '3':case '4':
+		case '5':case '6':case '7':case '8':case '9':
+			if (n = strchr(v, ','))*n = '\0'; else n = v + strlen(v); dbi(!n, v);
 
-				js.esori = v; js.emap = atoll(v);
-				js.esttr = (strchr(v, '.')?ej_float:ej_value)|(ej_size&(n-v));
-				if (js.esttr == ej_float) js.by(atof(v));
-				return n;
+			js.esori = v; js.emap = atoll(v);
+			js.esttr = (strchr(v, '.') ? ej_float : ej_value) | (ej_size & (n - v));
+			if (js.esttr == ej_float) js.by(atof(v));
+			return n;
 
-			case 'n':case 'N': case 't':case 'T':case 'f':case 'F':
-				n = strchr(v, ','); goto _here;
+		case 'n':case 'N': case 't':case 'T':case 'f':case 'F':
+			n = strchr(v, ','); goto _here;
 
-			case '"': n=strstr(v, R"(",)");if (n)n++;// sizeof(")
-			_here: if (!n)n=v+strlen(v); dbi(!n, v);*n='\0';
-				if (*v == '"') {
-					v=v+1;*(n-1)='\0';
-					js.esori = v; js.emap = iint(v);
-					js.esttr = ej_string | (ej_size & (n++-v-1)); 
-				}
-				else {
-					js.esori = v;
-					if (*v == 't' || *v == 'T') {
-						js.esttr = ej_bool;
-						js.emap = 1;
-					}
-					else if (*v == 'f' || *v == 'F') {
-						js.esttr = ej_bool;
-						js.emap = 0;
-					}
-					else if (*v == 'n' || *v == 'N') {
-						js.esttr = ej_null;
-						js.emap = ~0;
-					}
-				}
-				return n;
-			case '[': {
-				n = nextary_json(v); dbi(!n, v); if(n)*n++ = '\0';
-				array_json(jss, v);
-				return ++n;
+		case '"': n = strstr(v, R"(",)"); if (n)n++;// sizeof(")
+		_here: if (!n)n = v + strlen(v); dbi(!n, v); *n = '\0';
+			if (*v == '"') {
+				v = v + 1; *(n - 1) = '\0';
+				js.esori = v; js.emap = iint(v);
+				js.esttr = ej_string | (ej_size & (n++ - v - 1));
 			}
-			case '{': {
-				ejson *son; cstr s;
-				n = next_json(v++); dbi(!n, "no next_json");if (n)*n++ = '\0';
-				uh = calc_json(v);	 
-				if (uh != ~0) {
-					son = new ejson[uh];
-					js.emap = (iint)son;
-					js.esttr = ej_json | (uh & ej_size);
+			else {
+				js.esori = v;
+				if (*v == 't' || *v == 'T') {
+					js.esttr = ej_bool;
+					js.emap = 1;
+				}
+				else if (*v == 'f' || *v == 'F') {
+					js.esttr = ej_bool;
+					js.emap = 0;
+				}
+				else if (*v == 'n' || *v == 'N') {
+					js.esttr = ej_null;
+					js.emap = ~0;
+				}
+			}
+			return n;
+		case '[': {
+			n = nextary_json(v); dbi(!n, v); if (n)*n++ = '\0';
+			array_json(jss, v);
+			return ++n;
+		}
+		case '{': {
+			ejson* son; cstr s;
+			n = next_json(v++); dbi(!n, "no next_json"); if (n)*n++ = '\0';
+			uh = calc_json(v);
+			if (uh != ~0) {
+				son = new ejson[uh];
+				js.emap = (iint)son;
+				js.esttr = ej_json | (uh & ej_size);
 
-					while (uh--) {
-						s = strchr(++v, '":'); dbi(!s, s, v); if (s)*(s++ - 1) = '\0';
-						v = parse_json(son++, s, v); if(*(v+1)=='"')v++;
-						if ( *v == ',') v++;
-					}
-				} else null_json(jss);
-				return n;
-			}			
-			default: break;
+				while (uh--) {
+					s = strchr(++v, '":'); dbi(!s, s, v); if (s)*(s++ - 1) = '\0';
+					v = parse_json(son++, s, v); if (*(v + 1) == '"')v++;
+					if (*v == ',') v++;
+				}
+			}
+			else null_json(jss);
+			return n;
+		}
+		default: break;
 		}
 		return nullptr;
-	}	
-	static 
-	char* next_json(char* js_) {
-		bool bPass = 0, bAry = 0; 
+	}
+	static
+		char* next_json(char* js_) {
+		bool bPass = 0, bAry = 0;
 		unsigned u = 0;
 		while (*js_) {
 			if (*js_ == '"') bPass ^= 1;
@@ -1109,8 +1115,8 @@ private:
 		return js_;
 	}
 	static
-	char* nextary_json(char* js_) {
-		bool bPass = 0; 
+		char* nextary_json(char* js_) {
+		bool bPass = 0;
 		while (*js_) {
 			if (*js_ == '"') bPass ^= 1;
 			else if (!bPass) {
@@ -1122,40 +1128,40 @@ private:
 		return js_;
 	}
 	static
-	unsigned calc_json(cstr p) {
+		unsigned calc_json(cstr p) {
 		unsigned ur = 0;
 		bool bAry = 0;
 		while (p && *p) {
 			if (bAry && *p != ']') p++;
 			else switch (*p++) {
-				case '[': case ']': bAry ^= 1; break;
-				case '{': 
-					p = next_json(--p); break;
-				case '"':
-					p = strchr(p + 1, '"'); dbi(!p, p);
-					if (p && *(p + 1) == ':') { // "xxx":""
-						ur++; p += 2;
-						if (*p == '"') {
-							p = strchr(p + 1, '"'); dbi(!p, p);
-							p++;
-						}
-					};
-					break;
-				default: break;
+			case '[': case ']': bAry ^= 1; break;
+			case '{':
+				p = next_json(--p); break;
+			case '"':
+				p = strchr(p + 1, '"'); dbi(!p, p);
+				if (p && *(p + 1) == ':') { // "xxx":""
+					ur++; p += 2;
+					if (*p == '"') {
+						p = strchr(p + 1, '"'); dbi(!p, p);
+						p++;
+					}
+				};
+				break;
+			default: break;
 			}
 		}
 		return ur ? ur : ~0;
 	}
 	static
-	unsigned calcary_json(cstr p) {
+		unsigned calcary_json(cstr p) {
 		unsigned ur = 0;
 		if (*p == '[') p++;
 		if (*p == '"') {
-			while (p = strstr(p, R"(",")")) ur++,p+= R"(",)"_l;
+			while (p = strstr(p, R"(",")")) ur++, p += R"(",)"_l;
 			return ur ? ur + 1 : 0;
 		}
 		if (*p == '{') {
-			while (p = strstr(p, R"(},{)")) ur++,p+= R"(},)"_l;
+			while (p = strstr(p, R"(},{)")) ur++, p += R"(},)"_l;
 			return ur ? ur + 1 : 0;
 		}
 		// (*p >= '0' && 'p' <= '9') TRUE True False False
