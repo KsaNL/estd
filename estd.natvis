@@ -112,9 +112,9 @@ To enable:
 				<Item Name="[size]">size()</Item>
 				
 				<Item Name="[origin]" Condition="isv()&amp;&amp;!isary()">origin()</Item>
-				<Item Name="[value]" Condition="isv()&amp;&amp;!isary()">amap</Item>
+				<Item Name="[value]" Condition="isv()&amp;&amp;!isary()">value()</Item>
 				<ArrayItems Condition="isv()&amp;&amp;!isary()">
-					<Size>size()</Size>
+					<Size>orilen()</Size>
 					<ValuePointer>origin()</ValuePointer>
 				</ArrayItems>
 				
