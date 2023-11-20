@@ -3,8 +3,8 @@
  * >
  * > Project: Estd Header v4
  * > Copyright: Lioncky(Personal)
- * > Project	: https://github.com/Lioncky/estd v6
- * > Detail : Build in China, begin this at 07/12, latest update 2023/10.6
+ * > Project	: https://github.com/Lioncky/estd v7
+ * > Detail : Build in China, begin this at 07/12, latest update 2023/11.11
  * More information about sprintf series api
  * https://learn.microsoft.com/zh-cn/cpp/c-runtime-library/format-specification-syntax-printf-and-wprintf-functions?view=msvc-170
  *
@@ -91,7 +91,6 @@ bool __CRTDECL esame(void const* _Buf1, void const* _Buf2, size_t _Size) { retur
 
 // #_istr_len
 // 'ad' = 2 'abcd' = 4
-// 
 _Success_(return >= 0)
 _Check_return_opt_ _CRT_STDIO_INLINE
 constexpr int eintl(const int div) {
@@ -535,7 +534,7 @@ public:
 	// cmp left and same remove 
 	//
 	template <size_t _N, size_t N = _N - 1>
-	bool cmprm(const char(&sleft)[_N]) {
+	bool operator-=(const char(&sleft)[_N]) {
 		if (this->fo() && esame(sleft, this->esdata, N)) {
 			memcpy(this->esdata, this->esdata + N, this->esize - N + 2);
 			this->esize -= N;
@@ -550,6 +549,7 @@ public:
 	operator bool() { return !!this->esize; }
 	operator char* () { return this->esdata; }
 	char* operator*() { return this->esdata; }
+	bool operator--() { return this->endrm(); }
 	unsigned operator-() { return this->hash(); }
 	operator wchar_t* () { return this->as_wstr(); } // DANGEROUS
 	operator unsigned char* () { return (unsigned char*)this->esdata; }
